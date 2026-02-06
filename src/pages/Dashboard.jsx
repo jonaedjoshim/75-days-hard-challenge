@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { db } from "../firebase";
 import { doc, setDoc, onSnapshot } from "firebase/firestore";
+import { format } from 'date-fns';
 
 const Dashboard = () => {
   const totalDays = 75;
@@ -15,11 +16,12 @@ const Dashboard = () => {
         setHabitData(docSnap.data().habits);
       } else {
         const initialData = [
-          { id: 1, name: "Academic Study", time: "4 AM - 8 AM", completions: Array(75).fill(false) },
-          { id: 2, name: "React/MongoDB Practice", time: "9 AM - 12 PM", completions: Array(75).fill(false) },
-          { id: 3, name: "Data Analysis", time: "2 PM - 4:30 PM", completions: Array(75).fill(false) },
-          { id: 4, name: "SQL/Tech Review", time: "9 PM - 11 PM", completions: Array(75).fill(false) },
-          { id: 5, name: "8 Hours Sleep & Prayers", time: "Flexible", completions: Array(75).fill(false) },
+          { id: 1, name: "Academic Study", time: "06:00 AM - 09:30 AM", completions: Array(75).fill(false), timestamps: Array(75).fill(null) },
+          { id: 2, name: "React & MongoDB Learning", time: "09:30 AM - 12:30 PM", completions: Array(75).fill(false), timestamps: Array(75).fill(null) },
+          { id: 3, name: "Zohr Namaz & Rest", time: "12:30 PM - 02:30 PM", completions: Array(75).fill(false), timestamps: Array(75).fill(null) },
+          { id: 4, name: "Data Analysis Learning", time: "02:30 PM - 05:00 PM", completions: Array(75).fill(false), timestamps: Array(75).fill(null) },
+          { id: 5, name: "Prayer", time: "Flexible", completions: Array(75).fill(false), timestamps: Array(75).fill(null) },
+          { id: 6, name: "Sound Sleep (After Esha)", time: "Post Esha", completions: Array(75).fill(false), timestamps: Array(75).fill(null) },
         ];
         setHabitData(initialData);
         setDoc(doc(db, "trackers", "75hard_data"), { habits: initialData });
@@ -31,19 +33,23 @@ const Dashboard = () => {
 
   const calculateProgress = (daysCount) => {
     if (habitData.length === 0) return 0;
-    let currentDayIndex = 0;
+
+    let todayIndex = 0;
     habitData.forEach(habit => {
       const lastTrue = habit.completions.lastIndexOf(true);
-      if (lastTrue > currentDayIndex) currentDayIndex = lastTrue;
+      if (lastTrue > todayIndex) todayIndex = lastTrue;
     });
-    const start = Math.max(0, currentDayIndex - daysCount + 1);
-    const end = currentDayIndex + 1;
-    const actualDaysInRange = end - start;
-    const totalPossible = habitData.length * (actualDaysInRange || 1);
+
+    const end = todayIndex + 1;
+    const start = Math.max(0, end - daysCount);
+
+    const totalPossible = habitData.length * daysCount;
+
     const done = habitData.reduce((acc, curr) => {
       const slice = curr.completions.slice(start, end);
       return acc + slice.filter(Boolean).length;
     }, 0);
+
     return Math.round((done / totalPossible) * 100) || 0;
   };
 
@@ -53,11 +59,14 @@ const Dashboard = () => {
   });
 
   const toggleHabit = async (habitId, dayIndex) => {
+    const now = format(new Date(), 'hh:mm:ss a');
     const updatedHabits = habitData.map(habit => {
       if (habit.id === habitId) {
         const newCompletions = [...habit.completions];
+        const newTimestamps = habit.timestamps ? [...habit.timestamps] : Array(75).fill(null);
         newCompletions[dayIndex] = !newCompletions[dayIndex];
-        return { ...habit, completions: newCompletions };
+        newTimestamps[dayIndex] = newCompletions[dayIndex] ? now : null;
+        return { ...habit, completions: newCompletions, timestamps: newTimestamps };
       }
       return habit;
     });
@@ -68,14 +77,14 @@ const Dashboard = () => {
   if (loading) return <div className="mt-10 flex items-center justify-center"><span className="loading loading-spinner text-primary"></span></div>;
 
   return (
-    <div className="text-gray-200 p-4 md:p-6 font-sans">
-      <div className="max-w-[1600px] mx-auto space-y-6">
+    <div className="text-gray-200 p-4 md:p-6 font-sans max-h-screen overflow-hidden">
+      <div className="max-w-[1600px] mx-auto space-y-4">
         <div className="flex items-center justify-center">
           <h1 className="text-3xl font-black text-secondary uppercase tracking-tighter">Dashboard</h1>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="bg-[#242631] p-6 rounded-2xl border border-white/5 flex justify-around items-center">
+          <div className="bg-[#242631] p-6 rounded-2xl border border-white/5 flex justify-around items-center h-48">
             <div className="text-center flex-1">
               <p className="text-[10px] uppercase text-gray-500 mb-2 tracking-widest">Last 7 Days</p>
               <div className="radial-progress text-primary" style={{ "--value": calculateProgress(7), "--size": "5rem", "--thickness": "6px" }} role="progressbar">
@@ -104,7 +113,21 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className="bg-[#242631] rounded-2xl border border-white/5 overflow-hidden flex flex-col h-[60vh]">
+        {/* Insights Row */}
+        <div className="grid grid-cols-3 gap-4 h-[60px]">
+          {[
+            { label: "Hardcore Study", val: "37.5%", color: "text-primary" },
+            { label: "Deep Sleep", val: "33.3%", color: "text-secondary" },
+            { label: "Life Balance", val: "29.2%", color: "text-white" }
+          ].map((item, i) => (
+            <div key={i} className="bg-[#242631] px-5 rounded-2xl border border-white/5 flex justify-between items-center shadow-md">
+              <span className="text-[9px] uppercase text-gray-400 tracking-widest font-bold">{item.label}</span>
+              <span className={`text-sm font-black ${item.color}`}>{item.val}</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="bg-[#242631] rounded-2xl border border-white/5 overflow-hidden flex flex-col h-[50vh]">
           <div className="overflow-auto custom-scrollbar">
             <table className="w-full text-left border-collapse">
               <thead className="sticky top-0 bg-[#242631] z-20">
