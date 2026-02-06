@@ -10,16 +10,16 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsub = onSnapshot(doc(db, "trackers", "75hard_data"), (doc) => {
-      if (doc.exists()) {
-        setHabitData(doc.data().habits);
+    const unsub = onSnapshot(doc(db, "trackers", "75hard_data"), (docSnap) => {
+      if (docSnap.exists()) {
+        setHabitData(docSnap.data().habits);
       } else {
         const initialData = [
-          { id: 1, name: "৪ লিটার পানি", completions: Array(75).fill(false) },
-          { id: 2, name: "ব্যায়াম ১ (৪৫ মি.)", completions: Array(75).fill(false) },
-          { id: 3, name: "ব্যায়াম ২ (৪৫ মি.)", completions: Array(75).fill(false) },
-          { id: 4, name: "১০ পৃষ্ঠা বই পড়া", completions: Array(75).fill(false) },
-          { id: 5, name: "ডায়েট মেনে চলা", completions: Array(75).fill(false) },
+          { id: 1, name: "4 Liters Water", completions: Array(75).fill(false) },
+          { id: 2, name: "Workout 1 (45 min)", completions: Array(75).fill(false) },
+          { id: 3, name: "Workout 2 (45 min)", completions: Array(75).fill(false) },
+          { id: 4, name: "Read 10 Pages", completions: Array(75).fill(false) },
+          { id: 5, name: "Follow Diet", completions: Array(75).fill(false) },
         ];
         setHabitData(initialData);
       }
@@ -60,10 +60,11 @@ const Dashboard = () => {
 
   return (
     <div className="text-gray-200 p-4 md:p-6 font-sans">
-      <div className="max-w-400 mx-auto space-y-6">
+      <div className="max-w-[1600px] mx-auto space-y-6">
         <div className="flex items-center justify-center"> 
           <h1 className="text-3xl font-black text-secondary uppercase tracking-tighter">Dashboard</h1>
         </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="bg-[#242631] p-6 rounded-2xl border border-white/5 flex justify-around items-center relative">
             <div className="text-center flex-1">
@@ -99,8 +100,8 @@ const Dashboard = () => {
             <table className="w-full text-left border-collapse">
               <thead className="sticky top-0 bg-[#242631] z-20">
                 <tr className="text-gray-500 text-[10px] uppercase">
-                  <th className="p-4 sticky left-0 bg-[#242631] z-30 min-w-37.5">Habits</th>
-                  {daysArray.map(d => <th key={d} className="p-2 text-center min-w-10">D{d}</th>)}
+                  <th className="p-4 sticky left-0 bg-[#242631] z-30 min-w-[150px]">Habits</th>
+                  {daysArray.map(d => <th key={d} className="p-2 text-center min-w-[40px]">D{d}</th>)}
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
@@ -115,7 +116,7 @@ const Dashboard = () => {
                           type="checkbox"
                           checked={done}
                           onChange={() => toggleHabit(habit.id, index)}
-                          className="checkbox checkbox-primary checkbox-xs rounded border-gray-600"
+                          className="checkbox checkbox-primary rounded-full border-gray-600 transition-all duration-300"
                         />
                       </td>
                     ))}
