@@ -15,13 +15,14 @@ const Dashboard = () => {
         setHabitData(docSnap.data().habits);
       } else {
         const initialData = [
-          { id: 1, name: "4 Liters Water", completions: Array(75).fill(false) },
-          { id: 2, name: "Workout 1 (45 min)", completions: Array(75).fill(false) },
-          { id: 3, name: "Workout 2 (45 min)", completions: Array(75).fill(false) },
-          { id: 4, name: "Read 10 Pages", completions: Array(75).fill(false) },
-          { id: 5, name: "Follow Diet", completions: Array(75).fill(false) },
+          { id: 1, name: "Academic Study", time: "4 AM - 8 AM", completions: Array(75).fill(false) },
+          { id: 2, name: "React/MongoDB Practice", time: "9 AM - 12 PM", completions: Array(75).fill(false) },
+          { id: 3, name: "Data Analysis", time: "2 PM - 4:30 PM", completions: Array(75).fill(false) },
+          { id: 4, name: "SQL/Tech Review", time: "9 PM - 11 PM", completions: Array(75).fill(false) },
+          { id: 5, name: "8 Hours Sleep & Prayers", time: "Flexible", completions: Array(75).fill(false) },
         ];
         setHabitData(initialData);
+        setDoc(doc(db, "trackers", "75hard_data"), { habits: initialData });
       }
       setLoading(false);
     });
@@ -30,12 +31,20 @@ const Dashboard = () => {
 
   const calculateProgress = (daysCount) => {
     if (habitData.length === 0) return 0;
-    const totalPossible = habitData.length * daysCount;
+    let currentDayIndex = 0;
+    habitData.forEach(habit => {
+      const lastTrue = habit.completions.lastIndexOf(true);
+      if (lastTrue > currentDayIndex) currentDayIndex = lastTrue;
+    });
+    const start = Math.max(0, currentDayIndex - daysCount + 1);
+    const end = currentDayIndex + 1;
+    const actualDaysInRange = end - start;
+    const totalPossible = habitData.length * (actualDaysInRange || 1);
     const done = habitData.reduce((acc, curr) => {
-      const lastDays = curr.completions.slice(-daysCount);
-      return acc + lastDays.filter(Boolean).length;
+      const slice = curr.completions.slice(start, end);
+      return acc + slice.filter(Boolean).length;
     }, 0);
-    return Math.round((done / totalPossible) * 100);
+    return Math.round((done / totalPossible) * 100) || 0;
   };
 
   const graphData = daysArray.map((d, index) => {
@@ -61,12 +70,12 @@ const Dashboard = () => {
   return (
     <div className="text-gray-200 p-4 md:p-6 font-sans">
       <div className="max-w-[1600px] mx-auto space-y-6">
-        <div className="flex items-center justify-center"> 
+        <div className="flex items-center justify-center">
           <h1 className="text-3xl font-black text-secondary uppercase tracking-tighter">Dashboard</h1>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="bg-[#242631] p-6 rounded-2xl border border-white/5 flex justify-around items-center relative">
+          <div className="bg-[#242631] p-6 rounded-2xl border border-white/5 flex justify-around items-center">
             <div className="text-center flex-1">
               <p className="text-[10px] uppercase text-gray-500 mb-2 tracking-widest">Last 7 Days</p>
               <div className="radial-progress text-primary" style={{ "--value": calculateProgress(7), "--size": "5rem", "--thickness": "6px" }} role="progressbar">
@@ -100,15 +109,18 @@ const Dashboard = () => {
             <table className="w-full text-left border-collapse">
               <thead className="sticky top-0 bg-[#242631] z-20">
                 <tr className="text-gray-500 text-[10px] uppercase">
-                  <th className="p-4 sticky left-0 bg-[#242631] z-30 min-w-[150px]">Habits</th>
-                  {daysArray.map(d => <th key={d} className="p-2 text-center min-w-[40px]">D{d}</th>)}
+                  <th className="p-4 sticky left-0 bg-[#242631] z-30 min-w-[220px] border-r border-white/5">Habits</th>
+                  {daysArray.map(d => <th key={d} className="p-2 text-center min-w-[55px]">D{d}</th>)}
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
                 {habitData.map((habit) => (
                   <tr key={habit.id} className="hover:bg-white/5 transition-colors">
-                    <td className="p-4 text-sm font-medium sticky left-0 bg-[#242631] z-10 border-r border-white/5">
-                      {habit.name}
+                    <td className="p-4 sticky left-0 bg-[#242631] z-10 border-r border-white/5 shadow-[5px_0_10px_rgba(0,0,0,0.3)]">
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-white leading-tight">{habit.name}</span>
+                        <span className="text-[10px] text-primary font-medium mt-1">{habit.time}</span>
+                      </div>
                     </td>
                     {habit.completions.map((done, index) => (
                       <td key={index} className="p-2 text-center">
@@ -116,7 +128,7 @@ const Dashboard = () => {
                           type="checkbox"
                           checked={done}
                           onChange={() => toggleHabit(habit.id, index)}
-                          className="checkbox checkbox-primary rounded-full border-gray-600 transition-all duration-300"
+                          className="checkbox checkbox-primary checkbox-sm rounded-full border-gray-600 transition-all duration-300"
                         />
                       </td>
                     ))}
